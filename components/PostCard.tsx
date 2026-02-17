@@ -19,8 +19,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   };
 
   const timeLeft = formatTimeLeft(post.expiresAt);
-  // Highlight if less than 3 hours left
-  const isUrgent = timeLeft.includes('m left') || (timeLeft.includes('h left') && parseInt(timeLeft) < 3);
+  // Highlight if less than 4 hours left
+  const isUrgent = timeLeft.includes('m left') || (timeLeft.includes('h left') && parseInt(timeLeft) < 4);
 
   return (
     <article 
