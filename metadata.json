@@ -1,0 +1,5 @@
+{
+  "name": "Stanza",
+  "description": "A minimalist, ephemeral book discussion platform where posts disappear after 24 hours. Connect with book lovers in the moment.",
+  "requestFramePermissions": []
+}
