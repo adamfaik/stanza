@@ -49,31 +49,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Failed to record vote' });
     }
 
-    // Increment vote count on post
-    const { error: updateError } = await supabaseAdmin
-      .from('posts')
-      .update({ votes: supabaseAdmin.raw('votes + 1') as any })
-      .eq('id', postId);
+    // Increment vote count atomically using RPC
+    const { data: newVoteCount, error: updateError } = await supabaseAdmin
+      .rpc('increment_post_votes', { post_uuid: postId });
 
     if (updateError) {
       console.error('Error updating vote count:', updateError);
       return res.status(500).json({ error: 'Failed to update vote count' });
     }
 
-    // Get updated post
-    const { data: post, error: postError } = await supabaseAdmin
-      .from('posts')
-      .select('votes')
-      .eq('id', postId)
-      .single();
-
-    if (postError || !post) {
-      return res.status(500).json({ error: 'Failed to fetch updated post' });
-    }
-
     return res.status(200).json({
       success: true,
-      votes: post.votes,
+      votes: newVoteCount,
     });
   } catch (error) {
     console.error('Error in upvote:', error);

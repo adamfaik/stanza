@@ -116,3 +116,18 @@ BEGIN
     DELETE FROM magic_links WHERE expires_at < NOW() OR used = TRUE;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to increment post vote count atomically
+CREATE OR REPLACE FUNCTION increment_post_votes(post_uuid UUID)
+RETURNS INTEGER AS $$
+DECLARE
+  new_vote_count INTEGER;
+BEGIN
+  UPDATE posts 
+  SET votes = votes + 1 
+  WHERE id = post_uuid
+  RETURNING votes INTO new_vote_count;
+  
+  RETURN new_vote_count;
+END;
+$$ LANGUAGE plpgsql;
