@@ -1,6 +1,6 @@
 # Stanza Production Setup Guide
 
-This guide will walk you through setting up all the necessary services to deploy Stanza to production.
+This guide will walk you through setting up Supabase for Stanza deployment.
 
 ## Prerequisites
 
@@ -40,7 +40,8 @@ This guide will walk you through setting up all the necessary services to deploy
    - posts
    - comments
    - votes
-   - magic_links
+
+Note: The `magic_links` table is no longer needed as Supabase Auth handles authentication.
 
 ### 1.4 Create Storage Bucket for Images
 
@@ -56,36 +57,23 @@ This guide will walk you through setting up all the necessary services to deploy
    - Allowed operations: SELECT
    - Policy definition: `true`
 
-## Step 2: Email Service Setup (Resend)
+### 1.5 Configure Supabase Auth
 
-### 2.1 Create Resend Account
+Supabase Auth is automatically configured to send magic link emails:
 
-1. Go to [resend.com](https://resend.com)
-2. Sign up with your email
-3. Verify your email address
+1. In Supabase dashboard, go to **Authentication** → **Providers**
+2. Ensure **Email** provider is enabled
+3. Configure email templates (optional):
+   - Go to **Authentication** → **Email Templates**
+   - Customize the "Magic Link" template if desired
+4. For production, configure your SMTP settings:
+   - Go to **Project Settings** → **Auth**
+   - Scroll to **SMTP Settings**
+   - Either use Supabase's built-in email service or configure your own SMTP
 
-### 2.2 Get API Key
+## Step 2: Configure Environment Variables
 
-1. In Resend dashboard, go to **API Keys**
-2. Click **Create API Key**
-3. Name it: "Stanza Production"
-4. Copy the API key (you won't be able to see it again!)
-
-### 2.3 Configure Domain (Optional but Recommended)
-
-For production, you should use your own domain:
-
-1. Go to **Domains** in Resend dashboard
-2. Click **Add Domain**
-3. Enter your domain (e.g., `stanza.app`)
-4. Follow the DNS setup instructions
-5. Wait for verification (~10 minutes)
-
-For development, you can use Resend's test domain (`onboarding@resend.dev`).
-
-## Step 3: Configure Environment Variables
-
-### 3.1 Local Development
+### 2.1 Local Development
 
 1. Open `.env.local` in your project
 2. Fill in the values you collected:
@@ -96,198 +84,105 @@ SUPABASE_URL=https://xxxxx.supabase.co
 SUPABASE_ANON_KEY=your_anon_key_here
 SUPABASE_SERVICE_KEY=your_service_role_key_here
 
-# Email Service (Resend)
-EMAIL_API_KEY=re_xxxxxxxxxx
-EMAIL_FROM=noreply@yourdomain.com
-
 # Application Settings
 APP_URL=http://localhost:3000
-JWT_SECRET=your_random_secret_here
-
-# Optional: Gemini (if using AI features)
-GEMINI_API_KEY=your_gemini_key_if_needed
 ```
 
-**Generate a secure JWT secret:**
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+### 2.2 Production (Vercel)
 
-### 3.2 Production Environment
+You'll add these environment variables in Vercel during deployment (Step 3).
 
-1. Open `.env.production`
-2. Use the same values as `.env.local` but:
-   - Change `APP_URL` to your Vercel domain (e.g., `https://stanza.vercel.app`)
-   - Use production email address for `EMAIL_FROM`
-   - Generate a NEW `JWT_SECRET` for production (different from dev)
+## Step 3: Deploy to Vercel
 
-## Step 4: Install Dependencies
+### 3.1 Push Code to GitHub
 
 ```bash
-npm install
-```
-
-This will install all required packages including:
-- `@supabase/supabase-js` - Supabase client
-- `jsonwebtoken` - JWT token generation
-- `cookie` - Cookie parsing
-- `formidable` - File upload handling
-
-## Step 5: Test Locally
-
-1. Start the development server:
-```bash
-npm run dev
-```
-
-2. Open `http://localhost:3000` in your browser
-
-3. Test the following:
-   - ✅ View posts feed
-   - ✅ Click "Sign In" and enter your email
-   - ✅ Check your email inbox for magic link
-   - ✅ Click the magic link to sign in
-   - ✅ Create a new post (with and without image)
-   - ✅ Upvote a post
-   - ✅ Add a comment
-   - ✅ Check that posts show correct time remaining
-
-## Step 6: Deploy to Vercel
-
-### 6.1 Push to GitHub
-
-1. Initialize git (if not already done):
-```bash
-git init
 git add .
-git commit -m "Production-ready Stanza"
+git commit -m "Setup for production deployment"
+git push origin main
 ```
 
-2. Create a new repository on GitHub
-
-3. Push your code:
-```bash
-git remote add origin https://github.com/yourusername/stanza.git
-git branch -M main
-git push -u origin main
-```
-
-### 6.2 Deploy on Vercel
+### 3.2 Import Project to Vercel
 
 1. Go to [vercel.com](https://vercel.com)
-2. Sign up or log in with GitHub
-3. Click **Add New** → **Project**
+2. Sign up / Log in with GitHub
+3. Click **New Project**
 4. Import your GitHub repository
-5. Vercel will auto-detect Vite configuration
-6. **Before deploying**, add environment variables:
-   - Click **Environment Variables**
-   - Add ALL variables from `.env.production`:
-     - `SUPABASE_URL`
-     - `SUPABASE_ANON_KEY`
-     - `SUPABASE_SERVICE_KEY`
-     - `EMAIL_API_KEY`
-     - `EMAIL_FROM`
-     - `APP_URL` (use your Vercel domain)
-     - `JWT_SECRET`
-7. Click **Deploy**
-8. Wait for deployment to complete (~2 minutes)
+5. Configure the project:
+   - Framework Preset: **Vite**
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
 
-### 6.3 Update APP_URL
+### 3.3 Add Environment Variables in Vercel
 
-1. After first deployment, Vercel will give you a URL like `https://stanza-abc123.vercel.app`
-2. Go to your project settings → **Environment Variables**
-3. Update `APP_URL` to your actual Vercel URL
-4. Redeploy the project
+Click **Environment Variables** and add:
 
-### 6.4 Configure Custom Domain (Optional)
+```
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_KEY=your_service_role_key_here
+APP_URL=https://your-project.vercel.app
+```
 
-1. In Vercel project settings, go to **Domains**
-2. Add your custom domain (e.g., `stanza.app`)
-3. Follow the DNS configuration instructions
-4. Update `APP_URL` environment variable to your custom domain
-5. Update `EMAIL_FROM` in Resend to use your custom domain
+⚠️ Make sure to add these for all environments (Production, Preview, Development).
 
-## Step 7: Post-Deployment Verification
+### 3.4 Deploy
 
-Test your production app:
+1. Click **Deploy**
+2. Wait for the build to complete (~1-2 minutes)
+3. Visit your deployment URL
 
-1. ✅ Visit your Vercel URL
-2. ✅ Test authentication flow (magic link email)
-3. ✅ Create a post with an image
-4. ✅ Verify image loads correctly
-5. ✅ Test voting and commenting
-6. ✅ Verify posts expire after 24 hours
+## Step 4: Final Configuration
+
+### 4.1 Update Supabase Auth Redirect URL
+
+1. Go to Supabase dashboard → **Authentication** → **URL Configuration**
+2. Add your Vercel URL to **Site URL**: `https://your-project.vercel.app`
+3. Add to **Redirect URLs**: `https://your-project.vercel.app/**`
+
+### 4.2 Test Authentication
+
+1. Visit your deployed app
+2. Click "Log in"
+3. Enter your email
+4. Check your email for the magic link
+5. Click the link to sign in
+6. You'll be prompted for a username on first login
 
 ## Troubleshooting
 
-### Magic Link Emails Not Sending
+### Magic Link Emails Not Arriving
 
-- Check `EMAIL_API_KEY` is correct in Vercel environment variables
-- Verify Resend domain is verified (if using custom domain)
-- Check Resend dashboard for error logs
+1. Check your email spam folder
+2. In Supabase dashboard, go to **Authentication** → **Users** to verify the auth attempt
+3. Check Supabase logs for email sending errors
+4. Verify SMTP settings are configured correctly
 
-### Images Not Uploading
+### Build Errors on Vercel
 
-- Verify Supabase Storage bucket `post-images` exists and is public
-- Check `SUPABASE_SERVICE_KEY` is set correctly
-- Check Vercel function logs for errors
+1. Check the build logs in Vercel dashboard
+2. Ensure all environment variables are set correctly
+3. Verify Node.js version compatibility
 
-### Database Errors
+### Database Connection Issues
 
-- Verify all environment variables are set in Vercel
-- Check Supabase SQL Editor for any schema errors
-- Verify RLS policies are created correctly
+1. Verify Supabase keys are correct
+2. Check that RLS policies are enabled
+3. Ensure your IP is not blocked in Supabase
 
-### Session Not Persisting
+## Next Steps
 
-- Verify `JWT_SECRET` is set in Vercel
-- Check that cookies are being set (browser dev tools → Application → Cookies)
-- Ensure `APP_URL` matches your actual domain
+After successful deployment:
 
-## Monitoring and Maintenance
+- Test all features thoroughly
+- Set up custom domain (optional)
+- Configure email templates in Supabase
+- Monitor usage in Supabase and Vercel dashboards
+- Enable database backups in Supabase
 
-### Set Up Automated Post Cleanup
+## Cost Estimates
 
-Posts should automatically expire after 24 hours. To ensure cleanup:
+- **Supabase**: Free tier includes 500MB database, 1GB file storage, 50,000 monthly active users
+- **Vercel**: Free tier includes 100GB bandwidth, unlimited deployments
 
-1. In Supabase dashboard, go to **Database** → **Functions**
-2. The `cleanup_expired_posts()` function was created by the schema
-3. Set up a cron job (Vercel Cron or Supabase Edge Function) to run daily:
-```sql
-SELECT cleanup_expired_posts();
-```
-
-### Monitor Usage
-
-- **Supabase**: Dashboard shows database size, API requests, storage usage
-- **Resend**: Dashboard shows email delivery stats
-- **Vercel**: Dashboard shows function invocations, bandwidth, build logs
-
-### Rate Limits (Free Tier)
-
-- **Supabase Free**: 500MB database, 1GB file storage, 2GB bandwidth
-- **Resend Free**: 3,000 emails/month, 100 emails/day
-- **Vercel Free**: 100GB bandwidth, unlimited function invocations
-
-## Security Checklist
-
-- ✅ Environment variables are set in Vercel (not in code)
-- ✅ `.env.local` and `.env.production` are in `.gitignore`
-- ✅ `SUPABASE_SERVICE_KEY` is kept secret (only used server-side)
-- ✅ `JWT_SECRET` is randomly generated and unique per environment
-- ✅ Supabase RLS policies are enabled
-- ✅ Rate limiting is configured for auth endpoints
-- ✅ User input is sanitized in API endpoints
-
-## Support
-
-If you encounter issues:
-
-1. Check Vercel function logs for errors
-2. Check Supabase logs in dashboard
-3. Check Resend logs for email delivery issues
-4. Review this guide for missed steps
-
----
-
-**Congratulations! Your Stanza app is now live in production! 🎉**
+Both services should handle moderate traffic on their free tiers.

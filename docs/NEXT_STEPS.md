@@ -1,207 +1,96 @@
-# 🚀 Next Steps - Your Action Items
+# Next Steps - Getting Stanza Live
 
-## ✅ What's Been Completed
+Follow these steps in order to get your Stanza app running in production.
 
-All code implementation is **100% complete**! Here's what was built:
+## Quick Start (15 minutes)
 
-- ✅ Complete backend API (9 serverless functions)
-- ✅ Database schema with 5 tables
-- ✅ Authentication system (magic links)
-- ✅ Image upload to cloud storage
-- ✅ Real-time voting and commenting
-- ✅ Session management
-- ✅ Security measures (RLS, rate limiting, input validation)
-- ✅ Frontend integration with all APIs
-- ✅ Bug fixes (urgency threshold)
-- ✅ Production configuration
-- ✅ Comprehensive documentation
+### 1. Set Up Supabase (5 min)
 
-**Total:** ~1,500 lines of production-ready code created
+1. Create a free Supabase account at [supabase.com](https://supabase.com)
+2. Create a new project
+3. Copy your project URL and API keys from Settings → API
+4. Run the database schema:
+   - Go to SQL Editor
+   - Paste contents of `supabase/schema.sql`
+   - Click Run
+5. Create a storage bucket:
+   - Go to Storage
+   - Create bucket named `post-images`
+   - Make it public
 
-## 🎯 What You Need To Do Now
+Supabase Auth will handle sending magic link emails automatically - no additional email service needed!
 
-The following tasks require YOU to set up accounts and test. Follow these guides:
+### 2. Configure Environment Variables (2 min)
 
-### 1️⃣ Set Up External Services (30 minutes)
-
-#### A. Supabase (Database & Storage)
-📖 **Follow**: `SETUP.md` → Section 1
-
-Quick steps:
-1. Go to [supabase.com](https://supabase.com) → Sign up
-2. Create new project (takes ~2 min to provision)
-3. Copy Project URL and API keys
-4. Run `supabase/schema.sql` in SQL Editor
-5. Create `post-images` storage bucket
-
-#### B. Resend (Email Service)
-📖 **Follow**: `SETUP.md` → Section 2
-
-Quick steps:
-1. Go to [resend.com](https://resend.com) → Sign up
-2. Get API key from dashboard
-3. (Optional) Configure custom domain
-
-### 2️⃣ Configure Environment (5 minutes)
-
-📖 **Follow**: `SETUP.md` → Section 3
-
-1. Copy `.env.example` to `.env.local`
-2. Fill in all values from Supabase and Resend
-3. Generate JWT secret:
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
-
-### 3️⃣ Test Locally (15 minutes)
-
-📖 **Follow**: `DEPLOYMENT_CHECKLIST.md` → Section 5
+Update `.env.local` with your Supabase keys:
 
 ```bash
-npm run dev
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_KEY=your_service_role_key_here
+APP_URL=http://localhost:3000
 ```
 
-Then test all features:
-- ✅ Sign in (magic link email)
-- ✅ Create post with image
-- ✅ Upvote
-- ✅ Comment
-- ✅ Session persistence
+### 3. Deploy to Vercel (5 min)
 
-### 4️⃣ Deploy to Vercel (15 minutes)
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+3. Click "New Project" and import your repository
+4. Add the same environment variables (update APP_URL to your Vercel URL)
+5. Deploy!
 
-📖 **Follow**: `SETUP.md` → Section 6
+### 4. Configure Auth Redirect (2 min)
 
-Quick steps:
-1. Push to GitHub:
-   ```bash
-   git add .
-   git commit -m "Production-ready Stanza"
-   git push
-   ```
+1. Once deployed, copy your Vercel URL
+2. In Supabase dashboard → Authentication → URL Configuration:
+   - Set Site URL to your Vercel URL
+   - Add your Vercel URL to Redirect URLs: `https://your-project.vercel.app/**`
 
-2. Go to [vercel.com](https://vercel.com) → Import from GitHub
-3. Add ALL environment variables
-4. Deploy!
-5. Update `APP_URL` with your Vercel domain
-6. Redeploy
+### 5. Test! (1 min)
 
-### 5️⃣ Verify Production (10 minutes)
+1. Visit your deployed app
+2. Click "Log in"
+3. Enter your email
+4. Check your email for the magic link from Supabase
+5. Click the link and set your username
 
-📖 **Follow**: `DEPLOYMENT_CHECKLIST.md` → Section 9
+## That's It!
 
-Test everything again on your live site!
+Your app is now live! 🎉
 
-## 📚 Documentation Guide
+## Detailed Guides
 
-| File | Purpose | When to Use |
-|------|---------|-------------|
-| **NEXT_STEPS.md** | Quick action guide | Start here! (you are here) |
-| **SETUP.md** | Detailed setup instructions | Follow step-by-step |
-| **DEPLOYMENT_CHECKLIST.md** | Interactive checklist | Track your progress |
-| **IMPLEMENTATION_SUMMARY.md** | Technical details | Understand what was built |
+For step-by-step instructions with screenshots, see:
 
-## ⚡ Quick Start (TL;DR)
+- [Complete Setup Guide](./guides/SETUP.md) - Detailed walkthrough
+- [Deployment Checklist](./guides/DEPLOYMENT_CHECKLIST.md) - Pre-launch verification
 
-If you want to get started RIGHT NOW:
+## Common Issues
 
-1. **Create accounts**: Supabase + Resend (~10 min)
-2. **Get API keys**: Copy them to `.env.local` (~5 min)
-3. **Run schema**: Paste `supabase/schema.sql` into Supabase SQL Editor (~2 min)
-4. **Test**: `npm run dev` and test magic link login (~5 min)
-5. **Deploy**: Push to GitHub → Import in Vercel → Add env vars → Deploy (~10 min)
+**Not receiving magic link emails?**
+- Check spam folder
+- Verify Supabase Auth is enabled (Authentication → Providers → Email)
+- For production, consider configuring custom SMTP in Supabase
 
-**Total: ~30 minutes to production! 🎉**
+**Build errors on Vercel?**
+- Check environment variables are set correctly
+- Review build logs in Vercel dashboard
 
-## 🆘 Need Help?
+**Can't create posts?**
+- Verify storage bucket is public
+- Check browser console for errors
 
-### Common Issues
+## What's Different from Development
 
-**"Email not sending"**
-- Check `EMAIL_API_KEY` is correct
-- Verify email in Resend dashboard logs
-- Make sure `EMAIL_FROM` matches verified domain
+- Supabase Auth automatically sends real emails (no external email service needed)
+- Posts and data persist in your Supabase database
+- Images are stored in Supabase Storage
+- Everything scales automatically with your traffic
 
-**"Database error"**
-- Verify `schema.sql` ran successfully (check Table Editor in Supabase)
-- Check all 3 Supabase env vars are set
-- Look at Supabase logs for specific errors
+## Cost
 
-**"Images not uploading"**
-- Create `post-images` bucket in Supabase Storage
-- Make bucket public
-- Check `SUPABASE_SERVICE_KEY` is set
+Both Supabase and Vercel have generous free tiers:
+- **Supabase Free**: 500MB database, 1GB storage, 50,000 MAU
+- **Vercel Free**: 100GB bandwidth, unlimited deployments
 
-**"Session not working"**
-- Generate a proper `JWT_SECRET` (use the command above)
-- Make sure `APP_URL` matches your actual domain
-
-### Where to Get Help
-
-1. Check `SETUP.md` for detailed troubleshooting
-2. Review Vercel function logs (in Vercel dashboard)
-3. Check Supabase logs (in Supabase dashboard)
-4. Verify all environment variables are set correctly
-
-## ✨ You're Almost There!
-
-The hard work is done. All the code is ready. You just need to:
-1. Create 2 free accounts (Supabase + Resend)
-2. Copy some API keys
-3. Run one SQL script
-4. Deploy!
-
-**Let's get Stanza live! 🚀**
-
----
-
-## Quick Reference Commands
-
-```bash
-# Install dependencies (already done!)
-npm install
-
-# Run locally
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Generate JWT secret
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-## File Structure Reference
-
-```
-stanza/
-├── api/                    # Backend API endpoints
-│   ├── auth/              # Authentication (4 endpoints)
-│   ├── posts/             # Posts (3 endpoints)
-│   ├── votes/             # Voting (1 endpoint)
-│   └── comments/          # Comments (1 endpoint)
-├── lib/                    # Shared backend utilities
-│   ├── supabase.ts        # Database client
-│   ├── auth.ts            # JWT & sessions
-│   ├── middleware.ts      # Rate limiting, validation
-│   └── email.ts           # Email templates
-├── supabase/
-│   └── schema.sql         # Database schema (run this!)
-├── components/            # Frontend components
-├── context/               # React context (updated!)
-├── .env.local             # Your environment variables (create this!)
-├── .env.production        # Production env vars template
-├── .env.example           # Example template
-├── vercel.json            # Deployment config
-├── SETUP.md               # 📖 Start here for setup
-├── DEPLOYMENT_CHECKLIST.md # ✅ Track your progress
-├── IMPLEMENTATION_SUMMARY.md # 📊 Technical details
-└── NEXT_STEPS.md          # 👈 You are here!
-```
-
----
-
-**Status**: Ready for deployment! All code is complete. Just follow the guides! 🎯
+Perfect for launching and testing with real users!

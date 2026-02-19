@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Post, Comment } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface AppContextType {
   user: User | null;
@@ -37,20 +38,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [deviceId] = useState(getDeviceId());
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Check for existing session on mount
+  // Listen to Supabase auth state changes
   useEffect(() => {
-    checkSession();
-  }, []);
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        handleAuthStateChange(session.access_token);
+      } else {
+        setLoading(false);
+      }
+    });
 
-  // Check for magic link token in URL
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    
-    if (token) {
-      handleMagicLinkVerification(token);
-    }
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await handleAuthStateChange(session.access_token);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setAccessToken(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch posts on mount and periodically
@@ -70,63 +83,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [deviceId]);
 
-  // Check existing session
-  const checkSession = async () => {
+  // Handle auth state changes and sync user profile
+  const handleAuthStateChange = async (token: string) => {
+    setAccessToken(token);
+    
+    // Check if user needs to set username (first time sign in)
+    const needsUsername = localStorage.getItem('needs_username') === 'true';
+    let username: string | null = null;
+
+    if (needsUsername) {
+      username = prompt('Welcome! Please choose a username:');
+      if (!username) {
+        await supabase.auth.signOut();
+        alert('Username is required to continue');
+        return;
+      }
+      localStorage.removeItem('needs_username');
+    }
+
     try {
+      // Sync user profile with our custom users table
       const response = await fetch(`${API_BASE}/api/auth/me`, {
-        credentials: 'include',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ username }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
+      } else {
+        const error = await response.json();
+        if (error.error === 'Username is required for new users') {
+          localStorage.setItem('needs_username', 'true');
+          await supabase.auth.signOut();
+          alert('Please sign in again and provide a username');
+        }
       }
     } catch (error) {
-      console.error('Error checking session:', error);
+      console.error('Error syncing user profile:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Handle magic link verification
-  const handleMagicLinkVerification = async (token: string) => {
-    try {
-      // Check if username is needed (new user)
-      const username = prompt('Please enter your username:');
-      
-      if (!username) {
-        alert('Username is required');
-        return;
-      }
-
-      const response = await fetch(`${API_BASE}/api/auth/verify-magic-link`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ token, username }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setUser(data.user);
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else {
-        alert(data.error || 'Failed to verify magic link');
-      }
-    } catch (error) {
-      console.error('Error verifying magic link:', error);
-      alert('Failed to verify magic link');
     }
   };
 
   // Fetch all posts
   const fetchPosts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/posts`, {
-        credentials: 'include',
-      });
+      const response = await fetch(`${API_BASE}/api/posts`);
 
       if (response.ok) {
         const data = await response.json();
@@ -137,23 +144,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  // Send magic link
+  // Send magic link using Supabase Auth
   const login = async (email: string, username?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/auth/send-magic-link`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email }),
+      // If username is provided, store it for later use
+      if (username) {
+        localStorage.setItem('pending_username', username);
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase(),
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        return { success: true };
-      } else {
-        return { success: false, error: data.error || 'Failed to send magic link' };
+      if (error) {
+        console.error('Error sending magic link:', error);
+        return { success: false, error: error.message || 'Failed to send magic link' };
       }
+
+      return { success: true };
     } catch (error) {
       console.error('Error sending magic link:', error);
       return { success: false, error: 'Network error' };
@@ -162,18 +173,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await supabase.auth.signOut();
       setUser(null);
+      setAccessToken(null);
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
   const createPost = async (title: string, description: string, imageFile: File | null) => {
-    if (!user) return;
+    if (!user || !accessToken) return;
 
     try {
       const formData = new FormData();
@@ -185,7 +194,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       const response = await fetch(`${API_BASE}/api/posts/create`, {
         method: 'POST',
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: formData,
       });
 
@@ -203,13 +214,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const addComment = async (postId: string, content: string) => {
-    if (!user) return;
+    if (!user || !accessToken) return;
 
     try {
       const response = await fetch(`${API_BASE}/api/comments/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ postId, content }),
       });
 

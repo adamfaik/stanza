@@ -15,12 +15,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Check authentication
-    const cookieHeader = req.headers.cookie;
-    const session = getSessionFromCookies(cookieHeader);
-
-    if (!session) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+
+    // Get user profile
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('username')
+      .eq('id', authUser.id)
+      .single();
 
     const { postId, content } = req.body;
 
@@ -55,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('comments')
       .insert({
         post_id: postId,
-        author_id: session.userId,
+        author_id: authUser.id,
         content: sanitizedContent,
       })
       .select(`
@@ -77,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: comment.id,
       postId: comment.post_id,
       authorId: comment.author_id,
-      authorName: session.username,
+      authorName: userProfile?.username || 'Anonymous',
       content: comment.content,
       createdAt: new Date(comment.created_at).getTime(),
     };

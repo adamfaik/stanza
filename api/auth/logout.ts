@@ -1,27 +1,11 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { clearSessionCookie } from '../../lib/auth.js';
+// This endpoint is no longer needed - Supabase Auth handles logout on the client side
+// The frontend will use supabase.auth.signOut() directly
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(204).setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS').end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Clear session cookie
-    const cookie = clearSessionCookie();
-    res.setHeader('Set-Cookie', cookie);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Logged out successfully',
-    });
-  } catch (error) {
-    console.error('Error in logout:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+export default async function handler() {
+  return new Response(JSON.stringify({ 
+    message: 'This endpoint is deprecated. Use Supabase Auth client signOut() method.' 
+  }), {
+    status: 410,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }

@@ -24,11 +24,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Check authentication
-    const cookieHeader = req.headers.cookie;
-    const session = getSessionFromCookies(cookieHeader);
-
-    if (!session) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !authUser) {
+      return res.status(401).json({ error: 'Invalid session' });
     }
 
     // Parse form data
@@ -65,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       // Read file
       const fileBuffer = fs.readFileSync(imageFile.filepath);
-      const fileName = `${session.userId}/${Date.now()}-${imageFile.originalFilename || 'image.jpg'}`;
+      const fileName = `${authUser.id}/${Date.now()}-${imageFile.originalFilename || 'image.jpg'}`;
 
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
@@ -88,6 +93,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       imageUrl = urlData.publicUrl;
     }
 
+    // Get user profile for author name
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('username')
+      .eq('id', authUser.id)
+      .single();
+
     // Create post
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
@@ -98,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         title: title.trim(),
         description: description.trim(),
         image_url: imageUrl,
-        author_id: session.userId,
+        author_id: authUser.id,
         expires_at: expiresAt.toISOString(),
         votes: 0,
         comment_count: 0,
@@ -128,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description: post.description,
       imageUrl: post.image_url,
       authorId: post.author_id,
-      authorName: session.username,
+      authorName: userProfile?.username || 'Anonymous',
       createdAt: new Date(post.created_at).getTime(),
       expiresAt: new Date(post.expires_at).getTime(),
       votes: post.votes,
