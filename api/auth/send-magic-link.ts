@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../lib/supabase';
-import { sendMagicLinkEmail } from '../../lib/email';
+import { supabaseAdmin } from '../../lib/supabase.js';
+import { sendMagicLinkEmail } from '../../lib/email.js';
 import {
   checkRateLimit,
   errorResponse,
@@ -8,8 +8,8 @@ import {
   validateEmail,
   handleOptions,
   getCorsHeaders,
-} from '../../lib/middleware';
-import { getClientIp } from '../../lib/auth';
+} from '../../lib/middleware.js';
+import { getClientIp } from '../../lib/auth.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = req.headers.origin;

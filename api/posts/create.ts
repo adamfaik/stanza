@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../lib/supabase';
-import { requireAuth } from '../../lib/middleware';
-import { getSessionFromCookies } from '../../lib/auth';
+import { supabaseAdmin } from '../../lib/supabase.js';
+import { requireAuth } from '../../lib/middleware.js';
+import { getSessionFromCookies } from '../../lib/auth.js';
 import formidable from 'formidable';
 import fs from 'fs';
 

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../lib/supabase';
-import { getSessionFromCookies } from '../../lib/auth';
-import { sanitizeInput } from '../../lib/middleware';
+import { supabaseAdmin } from '../../lib/supabase.js';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { sanitizeInput } from '../../lib/middleware.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Handle OPTIONS preflight
