@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabaseAdmin } from '../../lib/supabase.js';
+import { supabaseAdmin } from '../../lib/supabase-server.js';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { sanitizeInput } from '../../lib/middleware.js';
 

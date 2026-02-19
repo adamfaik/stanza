@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Post, Comment } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase-client';
 
 interface AppContextType {
   user: User | null;
   posts: Post[];
   comments: Comment[];
   loading: boolean;
+  showUsernameModal: boolean;
   login: (email: string, username?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   createPost: (title: string, description: string, imageFile: File | null) => Promise<void>;
@@ -14,6 +15,8 @@ interface AppContextType {
   upvotePost: (postId: string) => Promise<void>;
   hasVoted: (postId: string) => boolean;
   fetchPosts: () => Promise<void>;
+  onUsernameSubmit: (username: string) => Promise<void>;
+  onUsernameCancel: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -39,6 +42,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [deviceId] = useState(getDeviceId());
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [pendingAuthToken, setPendingAuthToken] = useState<string | null>(null);
 
   // Listen to Supabase auth state changes
   useEffect(() => {
@@ -89,16 +94,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     // Check if user needs to set username (first time sign in)
     const needsUsername = localStorage.getItem('needs_username') === 'true';
-    let username: string | null = null;
 
     if (needsUsername) {
-      username = prompt('Welcome! Please choose a username:');
-      if (!username) {
-        await supabase.auth.signOut();
-        alert('Username is required to continue');
-        return;
-      }
+      // Show username modal instead of native prompt
+      setPendingAuthToken(token);
+      setShowUsernameModal(true);
+      setLoading(false);
       localStorage.removeItem('needs_username');
+      return;
     }
 
     try {
@@ -109,7 +112,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: null }),
       });
 
       if (response.ok) {
@@ -118,9 +121,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         const error = await response.json();
         if (error.error === 'Username is required for new users') {
-          localStorage.setItem('needs_username', 'true');
-          await supabase.auth.signOut();
-          alert('Please sign in again and provide a username');
+          // New user needs to set username
+          setPendingAuthToken(token);
+          setShowUsernameModal(true);
         }
       }
     } catch (error) {
@@ -128,6 +131,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle username submission from modal
+  const handleUsernameSubmit = async (username: string) => {
+    if (!pendingAuthToken) {
+      throw new Error('No auth token available');
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/me`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pendingAuthToken}`,
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        setAccessToken(pendingAuthToken);
+        setShowUsernameModal(false);
+        setPendingAuthToken(null);
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to set username');
+      }
+    } catch (error) {
+      console.error('Error setting username:', error);
+      throw error;
+    }
+  };
+
+  // Handle username modal cancel
+  const handleUsernameCancel = async () => {
+    await supabase.auth.signOut();
+    setShowUsernameModal(false);
+    setPendingAuthToken(null);
+    setAccessToken(null);
   };
 
   // Fetch all posts
@@ -283,13 +326,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       posts, 
       comments, 
       loading,
+      showUsernameModal,
       login, 
       logout, 
       createPost, 
       addComment, 
       upvotePost,
       hasVoted,
-      fetchPosts
+      fetchPosts,
+      onUsernameSubmit: handleUsernameSubmit,
+      onUsernameCancel: handleUsernameCancel
     }}>
       {children}
     </AppContext.Provider>
