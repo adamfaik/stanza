@@ -1,166 +1,195 @@
-# Stanza
+# Stanza.
 
-**A minimalist, text-first social platform for book lovers to share fleeting thoughts and discussions.**
+![Stanza](public/og-image.png)
 
-Every post has a strict 24-hour lifespan, creating a sense of urgency and casual conversation—like a pop-up book club that disappears.
+A minimalist platform for time-limited ideas.
 
-## ✨ Features
+---
 
-- **Magic Link Authentication** - Passwordless email sign-in
-- **24-Hour Posts** - All content expires after 24 hours
-- **Image Support** - One image per post, stored in cloud
-- **Voting System** - Simple upvote with spam prevention
-- **Comments** - Login-required discussions
-- **Smart Sorting** - Top, Undiscovered, Just Added, Last Call
-- **Urgency Indicators** - Visual alerts for posts expiring soon
-- **Polished Design** - Clean typography, whitespace, modern aesthetics
+## What is Stanza?
 
-## 🚀 Quick Start
+Stanza is a text-first discussion space where every post lives for exactly 24 hours and then disappears. It is designed for people who want to share a thought, spark a conversation, and let it go.
+
+There are no follower counts, no profiles, no algorithmic feeds. Only writing, reading, voting, and time running out.
+
+---
+
+## Product
+
+### The Core Idea
+
+Most social platforms are designed for permanence. Content accumulates, gets indexed, and follows you forever. Stanza works in the opposite direction: posts are ephemeral by design. The 24-hour lifespan creates a sense of urgency that encourages genuine, in-the-moment participation rather than performative posting.
+
+### Who Is It For?
+
+Stanza is for people who want to share something worth reading — a reflection, a question, a take — without the pressure of building an audience or maintaining a presence. It works particularly well for literary and intellectual communities where the quality of the idea matters more than the identity of the person sharing it.
+
+### Design Principles
+
+- **Text first.** The reading experience is the product. Typography, whitespace, and silence are the primary design tools.
+- **Ephemerality as feature.** Posts expire. The feed is always fresh. There is no archive to curate.
+- **Minimal identity.** Users have a username. That is all. No bios, no avatars, no follower counts.
+- **Urgency by design.** Posts approaching expiration are visually flagged, creating a natural rhythm of discovery and loss.
+
+---
+
+## Features
+
+### Authentication
+- Passwordless sign-in via magic link email (Supabase Auth)
+- First-time users choose a username on their first login
+- Sessions persist across page reloads
+
+### Posts
+- Create a post with a title, body, and optional cover image
+- Posts expire automatically 24 hours after creation
+- Images are stored in Supabase Storage
+
+### Feed
+- Four sort modes: **Top** (most votes), **Undiscovered** (fewest votes), **Just Added** (newest), **Last Call** (expiring soonest)
+- Feed refreshes every 30 seconds automatically
+- Expired posts are never shown
+
+### Voting
+- One upvote per post per device
+- Vote counts are updated atomically via a PostgreSQL function
+
+### Comments
+- Comments require authentication
+- Comment counts are shown on post cards in the feed
+
+### Urgency Indicators
+- Posts with less than 4 hours remaining are flagged visually in the feed
+
+---
+
+## Tech Stack
+
+**Frontend**
+- React 19, TypeScript, Vite
+- Tailwind CSS (via CDN)
+- Merriweather (serif) + Inter (sans-serif) typography
+- Lucide React icons
+
+**Backend**
+- Vercel Serverless Functions (Node.js, ESM)
+- Supabase (PostgreSQL, Row Level Security, Storage, Auth)
+
+**Deployment**
+- Vercel (frontend + API routes)
+- GitHub (source, triggers Vercel deploys on push)
+
+---
+
+## Project Structure
+
+```
+stanza/
+├── api/                  # Vercel serverless functions
+│   ├── auth/             # Magic link, session, logout
+│   ├── posts/            # Create, list, fetch by id
+│   ├── votes/            # Upvote
+│   └── comments/         # Create comment
+├── components/           # React UI components
+├── context/              # AppContext (global state + API calls)
+├── lib/                  # Supabase clients (browser + server)
+├── supabase/
+│   └── schema.sql        # Database schema and RLS policies
+├── public/               # Static assets (favicon, OG image)
+├── docs/                 # Setup and deployment guides
+└── index.html            # Entry point
+```
+
+---
+
+## Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- Supabase account (database & storage)
-- Resend account (email service)
-- Vercel account (hosting)
+- A [Supabase](https://supabase.com) project
+- A [Vercel](https://vercel.com) account
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/stanza.git
-   cd stanza
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   # Fill in your API keys (see docs/guides/SETUP.md)
-   ```
-
-4. **Set up Supabase database**
-   - Run the SQL in `supabase/schema.sql`
-   - Create `post-images` storage bucket
-
-5. **Deploy to Vercel**
-   ```bash
-   git push origin main
-   # Then import into Vercel dashboard
-   ```
-
-📖 **Detailed instructions**: See [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md)
-
-## 📁 Project Structure
-
-```
-stanza/
-├── api/                    # Vercel serverless functions
-│   ├── auth/              # Authentication endpoints
-│   ├── posts/             # Posts CRUD operations
-│   ├── votes/             # Voting system
-│   └── comments/          # Comments system
-├── components/            # React components
-├── context/               # React context (state management)
-├── lib/                   # Shared utilities
-│   ├── supabase.ts       # Database client
-│   ├── auth.ts           # JWT & session management
-│   ├── middleware.ts     # Rate limiting, validation
-│   └── email.ts          # Email templates
-├── supabase/             # Database schema
-├── docs/                 # Documentation
-│   ├── NEXT_STEPS.md    # Start here!
-│   ├── specs.md         # Original specifications
-│   └── guides/          # Detailed guides
-└── public/              # Static assets
-```
-
-## 🛠️ Tech Stack
-
-**Frontend:**
-- React 19
-- TypeScript
-- Vite
-- Lucide Icons
-
-**Backend:**
-- Vercel Serverless Functions
-- Supabase (PostgreSQL)
-- Supabase Storage
-- JWT Authentication
-
-**Services:**
-- Resend (Email)
-- Vercel (Hosting)
-
-## 📚 Documentation
-
-| Document | Description |
-|----------|-------------|
-| **[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)** | 👈 Start here! Quick action guide |
-| [docs/guides/SETUP.md](docs/guides/SETUP.md) | Detailed setup instructions |
-| [docs/guides/QUICK_DEPLOY.md](docs/guides/QUICK_DEPLOY.md) | Fast deployment guide |
-| [docs/guides/DEPLOYMENT_CHECKLIST.md](docs/guides/DEPLOYMENT_CHECKLIST.md) | Interactive deployment checklist |
-| [docs/guides/LOCAL_DEVELOPMENT.md](docs/guides/LOCAL_DEVELOPMENT.md) | Local development guide |
-| [docs/IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md) | Technical implementation details |
-
-## 🔒 Security Features
-
-- Row Level Security (RLS) on all database tables
-- HTTP-only secure cookies
-- CSRF protection via SameSite cookies
-- Rate limiting on authentication endpoints
-- Input validation and sanitization
-- Service keys kept server-side only
-
-## 🌐 Environment Variables
-
-Required environment variables:
+### 1. Clone and install
 
 ```bash
-# Supabase
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_KEY=your_service_key
-
-# Email Service
-EMAIL_API_KEY=your_resend_api_key
-EMAIL_FROM=noreply@yourdomain.com
-
-# Application
-APP_URL=https://your-domain.vercel.app
-JWT_SECRET=your_random_secret
+git clone https://github.com/yourusername/stanza.git
+cd stanza
+npm install
 ```
 
-See [`.env.example`](.env.example) for a complete template.
+### 2. Configure environment variables
 
-## 🚢 Deployment
+Create `.env.local` in the project root:
 
-**Recommended**: Deploy to Vercel for automatic serverless function handling.
+```bash
+# Supabase — frontend (exposed to browser via Vite)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+
+# Supabase — backend (server-side only, not exposed)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_KEY=your_service_role_key
+
+# Application
+APP_URL=http://localhost:3000
+```
+
+### 3. Set up the database
+
+In your Supabase project, open the SQL Editor and run the contents of `supabase/schema.sql`. This creates all tables, indexes, RLS policies, and the `increment_post_votes` function.
+
+Then create a Storage bucket named `post-images` with public read access.
+
+### 4. Configure Supabase Auth
+
+In the Supabase Dashboard under **Authentication → URL Configuration**:
+- Set **Site URL** to your production domain (e.g. `https://stanza-app.vercel.app`)
+- Add your production domain to **Redirect URLs**
+
+To customise the magic link email, go to **Authentication → Email Templates → Magic Link**.
+
+### 5. Run locally
+
+```bash
+npm run dev
+```
+
+The app runs on `http://localhost:3000`. API routes are served by Vite's dev proxy.
+
+### 6. Deploy to Vercel
 
 1. Push to GitHub
-2. Import into Vercel
-3. Add environment variables
-4. Deploy!
+2. Import the repository in the Vercel dashboard
+3. Add the following environment variables in Vercel (Settings → Environment Variables):
 
-📖 **Full guide**: See [`docs/guides/QUICK_DEPLOY.md`](docs/guides/QUICK_DEPLOY.md)
+| Variable | Description |
+|---|---|
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key (keep secret) |
+| `APP_URL` | Your Vercel production URL |
 
-## 📝 License
-
-This project is open source and available under the MIT License.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
+4. Deploy. Vercel picks up the `vercel.json` configuration automatically.
 
 ---
 
-**Built with care for book lovers who value meaningful, ephemeral conversations.**
+## Database Schema
+
+| Table | Purpose |
+|---|---|
+| `users` | User profiles (id, email, username) |
+| `posts` | Post content, author, expiry, vote count |
+| `comments` | Comments linked to posts and users |
+| `votes` | One vote per post per device (unique constraint) |
+
+Row Level Security is enabled on all tables. The service role key is only used server-side in API routes.
+
+---
+
+## License
+
+MIT
