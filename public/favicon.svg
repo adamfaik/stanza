@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@1,700&amp;display=block');
+    </style>
+  </defs>
   <rect width="32" height="32" rx="6" fill="#1a1a1a"/>
-  <text x="51%" y="74%" text-anchor="middle" font-family="Georgia, serif" font-size="23" font-weight="bold" font-style="italic" fill="white">S</text>
+  <text x="52%" y="74%" text-anchor="middle" font-family="'Merriweather', Georgia, serif" font-size="22" font-weight="700" font-style="italic" fill="white">S</text>
 </svg>
