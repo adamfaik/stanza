@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, AlertCircle, Check } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 
 interface UsernameModalProps {
   onSubmit: (username: string) => Promise<void>;
@@ -66,9 +66,6 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ onSubmit, onCancel
         </button>
 
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-50 mb-4">
-            <Check size={24} className="text-green-600" />
-          </div>
           <h2 className="font-serif text-2xl font-medium mb-2">Welcome to Stanza</h2>
           <p className="text-sm text-gray-500">
             Choose a username to complete your account.
@@ -77,17 +74,14 @@ export const UsernameModal: React.FC<UsernameModalProps> = ({ onSubmit, onCancel
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <User size={16} className="text-gray-400" />
-              <label className="text-xs text-gray-600 font-medium">Username</label>
-            </div>
+            <label className="text-xs text-gray-600 font-medium block mb-2">Username</label>
             <input 
               type="text" 
               required
               value={username}
               onChange={e => handleUsernameChange(e.target.value)}
               placeholder="your_username"
-              className="w-full bg-transparent border-b border-gray-200 py-2 outline-none focus:border-black transition-colors text-gray-900 placeholder-gray-400 font-sans"
+              className="w-full bg-transparent border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-gray-400 transition-colors text-gray-900 placeholder-gray-400 font-sans"
               autoFocus
               disabled={loading}
               maxLength={50}

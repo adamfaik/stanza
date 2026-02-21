@@ -29,25 +29,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Get or create user in our custom users table
-    let { data: user, error: userError } = await supabaseAdmin
+    let { data: user } = await supabaseAdmin
       .from('users')
       .select('id, email, username, created_at')
       .eq('id', authUser.id)
       .single();
 
-    // If user doesn't exist in our table, create them
-    if (userError || !user) {
+    // Fallback: find by email (handles mismatched UUIDs from prior attempts)
+    if (!user) {
+      const { data: byEmail } = await supabaseAdmin
+        .from('users')
+        .select('id, email, username, created_at')
+        .eq('email', authUser.email?.toLowerCase() || '')
+        .single();
+      user = byEmail ?? null;
+    }
+
+    // If still not found, create the user
+    if (!user) {
       if (!username) {
         return res.status(400).json({ error: 'Username is required for new users' });
       }
 
       const { data: newUser, error: createError } = await supabaseAdmin
         .from('users')
-        .insert({
+        .upsert({
           id: authUser.id,
           email: authUser.email?.toLowerCase() || '',
           username: username.trim(),
-        })
+        }, { onConflict: 'email' })
         .select()
         .single();
 
