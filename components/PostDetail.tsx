@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Post, Comment } from '../types';
 import { useApp } from '../context/AppContext';
 import { formatTimeLeft, formatRelativeTime } from '../utils/time';
@@ -11,17 +11,27 @@ interface PostDetailProps {
 }
 
 export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack, onLoginRequest }) => {
-  const { comments, addComment, user, upvotePost, hasVoted } = useApp();
+  const { comments, addComment, fetchComments, user, upvotePost, hasVoted } = useApp();
   const [commentText, setCommentText] = useState('');
-  
+  const [loadingComments, setLoadingComments] = useState(true);
+
+  useEffect(() => {
+    fetchComments(post.id).finally(() => setLoadingComments(false));
+  }, [post.id]);
+
   const postComments = comments.filter(c => c.postId === post.id);
   const voted = hasVoted(post.id);
 
-  const handleSubmitComment = (e: React.FormEvent) => {
+  const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    addComment(post.id, commentText);
+    const text = commentText;
     setCommentText('');
+    try {
+      await addComment(post.id, text);
+    } catch {
+      setCommentText(text);
+    }
   };
 
   return (
@@ -111,19 +121,24 @@ export const PostDetail: React.FC<PostDetailProps> = ({ post, onBack, onLoginReq
 
         {/* List */}
         <div className="space-y-12">
-          {postComments.map(comment => (
-            <div key={comment.id} className="group">
-                <div className="flex items-baseline gap-3 mb-3 font-sans">
-                    <span className="font-bold text-sm text-black">{comment.authorName}</span>
-                    <span className="text-xs text-gray-400">{formatRelativeTime(comment.createdAt)}</span>
-                </div>
-                <p className="text-zinc-800 font-serif text-lg leading-relaxed">{comment.content}</p>
+          {loadingComments ? (
+            <div className="text-center py-8">
+              <p className="text-gray-300 font-serif italic text-lg">Loading...</p>
             </div>
-          ))}
-          {postComments.length === 0 && (
-             <div className="text-center py-8">
-                 <p className="text-gray-400 font-serif italic text-lg">The room is silent.</p>
-             </div>
+          ) : postComments.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 font-serif italic text-lg">The room is silent.</p>
+            </div>
+          ) : (
+            postComments.map(comment => (
+              <div key={comment.id} className="group">
+                  <div className="flex items-baseline gap-3 mb-3 font-sans">
+                      <span className="font-bold text-sm text-black">{comment.authorName}</span>
+                      <span className="text-xs text-gray-400">{formatRelativeTime(comment.createdAt)}</span>
+                  </div>
+                  <p className="text-zinc-800 font-serif text-lg leading-relaxed">{comment.content}</p>
+              </div>
+            ))
           )}
         </div>
       </section>

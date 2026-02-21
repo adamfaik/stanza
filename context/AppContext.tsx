@@ -11,10 +11,11 @@ interface AppContextType {
   login: (email: string, username?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   createPost: (title: string, description: string, imageFile: File | null) => Promise<void>;
-  addComment: (postId: string, content: string) => Promise<void>;
+  addComment: (postId: string, content: string) => Promise<Comment>;
   upvotePost: (postId: string) => Promise<void>;
   hasVoted: (postId: string) => boolean;
   fetchPosts: () => Promise<void>;
+  fetchComments: (postId: string) => Promise<void>;
   onUsernameSubmit: (username: string) => Promise<void>;
   onUsernameCancel: () => Promise<void>;
 }
@@ -256,8 +257,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  const addComment = async (postId: string, content: string) => {
-    if (!user || !accessToken) return;
+  const fetchComments = async (postId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/posts/${postId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const fetched: Comment[] = data.comments || [];
+        setComments(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const incoming = fetched.filter(c => !existingIds.has(c.id));
+          return [...prev, ...incoming];
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  const addComment = async (postId: string, content: string): Promise<Comment> => {
+    if (!user || !accessToken) throw new Error('Not authenticated');
 
     try {
       const response = await fetch(`${API_BASE}/api/comments/create`, {
@@ -277,6 +295,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setPosts(prev => prev.map(p => 
           p.id === postId ? { ...p, commentCount: p.commentCount + 1 } : p
         ));
+        return data.comment;
       } else {
         const error = await response.json();
         throw new Error(error.error || 'Failed to create comment');
@@ -334,6 +353,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       upvotePost,
       hasVoted,
       fetchPosts,
+      fetchComments,
       onUsernameSubmit: handleUsernameSubmit,
       onUsernameCancel: handleUsernameCancel
     }}>

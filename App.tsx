@@ -6,12 +6,13 @@ import { PostDetail } from './components/PostDetail';
 import { CreatePost } from './components/CreatePost';
 import { AuthModal } from './components/AuthModal';
 import { UsernameModal } from './components/UsernameModal';
-import { Post, SortOption } from './types';
+import { SortOption } from './types';
 import { ChevronDown } from 'lucide-react';
 
 const StanzaApp: React.FC = () => {
   const { posts, user, showUsernameModal, onUsernameSubmit, onUsernameCancel } = useApp();
-  const [activePost, setActivePost] = useState<Post | null>(null);
+  const [activePostId, setActivePostId] = useState<string | null>(null);
+  const activePost = activePostId ? (posts.find(p => p.id === activePostId) ?? null) : null;
   const [isAuthOpen, setAuthOpen] = useState(false);
   const [isCreateOpen, setCreateOpen] = useState(false);
 
@@ -62,7 +63,7 @@ const StanzaApp: React.FC = () => {
       {activePost ? (
         <PostDetail 
           post={activePost} 
-          onBack={() => setActivePost(null)}
+          onBack={() => setActivePostId(null)}
           onLoginRequest={() => setAuthOpen(true)}
         />
       ) : (
@@ -105,7 +106,7 @@ const StanzaApp: React.FC = () => {
                     <PostCard 
                         key={post.id} 
                         post={post} 
-                        onClick={() => setActivePost(post)} 
+                        onClick={() => setActivePostId(post.id)} 
                     />
                 ))
             ) : (
