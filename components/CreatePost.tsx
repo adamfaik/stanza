@@ -11,9 +11,20 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!image) {
+      setImagePreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(image);
+    setImagePreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [image]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,11 +107,10 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
               onChange={handleImageSelect}
           />
 
-          {/* Fix 1: significant bottom margin so image doesn't crowd the title */}
-          {image && (
+          {imagePreviewUrl && (
                 <div className="relative w-full h-64 md:h-80 rounded-lg overflow-hidden group shadow-sm mb-12">
                     <img 
-                        src={URL.createObjectURL(image)} 
+                        src={imagePreviewUrl} 
                         alt="Preview" 
                         className="w-full h-full object-cover" 
                     />
@@ -114,15 +124,13 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
                 </div>
             )}
 
-          {/* Fix 2: leading-tight to prevent descenders crashing into ascenders
-              Fix 3: mb-8 to separate title from body proportionally */}
           <div className="relative mb-8">
             <textarea 
               ref={titleTextareaRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give it a title..."
-              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold leading-tight outline-none resize-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight overflow-hidden"
+              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold leading-tight outline-none resize-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight min-h-[4rem] md:min-h-[5rem] scroll-mt-20"
               autoFocus
               rows={1}
             />
