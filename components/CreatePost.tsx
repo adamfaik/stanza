@@ -13,6 +13,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
   const [image, setImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,9 +36,21 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
     }
   };
 
+  // Auto-resize title textarea
+  const adjustTitleHeight = () => {
+    if (titleTextareaRef.current) {
+      titleTextareaRef.current.style.height = 'auto';
+      titleTextareaRef.current.style.height = titleTextareaRef.current.scrollHeight + 'px';
+    }
+  };
+
   useEffect(() => {
     adjustTextareaHeight();
   }, [description]);
+
+  useEffect(() => {
+    adjustTitleHeight();
+  }, [title]);
 
   return (
     <div className="fixed inset-0 z-50 bg-paper overflow-y-auto animate-fade-in">
@@ -102,13 +115,14 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
 
           {/* Title Section */}
           <div className="relative group">
-            <input 
-              type="text" 
+            <textarea 
+              ref={titleTextareaRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give it a title..."
-              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold outline-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight"
+              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold outline-none resize-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight overflow-hidden"
               autoFocus
+              rows={1}
             />
           </div>
 
