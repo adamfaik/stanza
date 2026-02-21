@@ -86,7 +86,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
         </div>
 
         {/* Writing Area */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-8 pb-20 text-left">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col pb-20 text-left">
           
           <input 
               type="file" 
@@ -96,8 +96,9 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
               onChange={handleImageSelect}
           />
 
+          {/* Fix 1: significant bottom margin so image doesn't crowd the title */}
           {image && (
-                <div className="relative w-full h-64 md:h-80 rounded-lg overflow-hidden group shadow-sm">
+                <div className="relative w-full h-64 md:h-80 rounded-lg overflow-hidden group shadow-sm mb-12">
                     <img 
                         src={URL.createObjectURL(image)} 
                         alt="Preview" 
@@ -113,14 +114,15 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onClose }) => {
                 </div>
             )}
 
-          {/* Title Section */}
-          <div className="relative group">
+          {/* Fix 2: leading-tight to prevent descenders crashing into ascenders
+              Fix 3: mb-8 to separate title from body proportionally */}
+          <div className="relative mb-8">
             <textarea 
               ref={titleTextareaRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Give it a title..."
-              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold outline-none resize-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight overflow-hidden"
+              className="w-full bg-transparent text-5xl md:text-6xl font-serif font-bold leading-tight outline-none resize-none placeholder-gray-400 text-zinc-900 transition-colors tracking-tight overflow-hidden"
               autoFocus
               rows={1}
             />

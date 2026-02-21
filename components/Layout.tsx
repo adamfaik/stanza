@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { User, LogOut, Plus } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +10,20 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, onOpenAuth, onOpenCreate }) => {
   const { user, logout } = useApp();
+  const [isUserMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isUserMenuOpen]);
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-white selection:bg-zinc-100 selection:text-zinc-900">
@@ -32,22 +46,34 @@ export const Layout: React.FC<LayoutProps> = ({ children, onOpenAuth, onOpenCrea
                  <Plus size={16} /> New Post
                </button>
                
-               {/* Profile Avatar Only - Simplified */}
-               <div className="group relative">
-                  <button className="focus:outline-none block">
+               {/* Profile Avatar Only - Click to open menu */}
+               <div className="relative" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((open) => !open)}
+                    className="focus:outline-none block"
+                    aria-expanded={isUserMenuOpen}
+                    aria-haspopup="true"
+                  >
                     <div className="w-9 h-9 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-500 border border-zinc-200 hover:border-zinc-400 transition-all">
                         <span className="font-sans text-xs font-medium">{user.username[0].toUpperCase()}</span>
                     </div>
                   </button>
-                  {/* Dropdown */}
-                  <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 shadow-xl rounded-lg overflow-hidden hidden group-hover:block py-1 z-50">
-                     <div className="px-4 py-2 border-b border-gray-50">
-                        <p className="text-xs font-medium text-gray-900 truncate font-sans">{user.username}</p>
-                     </div>
-                     <button onClick={logout} className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-50 flex items-center gap-2 transition-colors font-sans">
-                        <LogOut size={12} /> Log Out
-                     </button>
-                  </div>
+                  {/* Dropdown - stays open until click outside or Log Out */}
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-100 shadow-xl rounded-lg overflow-hidden py-1 z-50">
+                       <div className="px-4 py-2 border-b border-gray-50">
+                          <p className="text-xs font-medium text-gray-900 truncate font-sans">{user.username}</p>
+                       </div>
+                       <button
+                         type="button"
+                         onClick={() => { setUserMenuOpen(false); logout(); }}
+                         className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-gray-50 flex items-center gap-2 transition-colors font-sans"
+                       >
+                         <LogOut size={12} /> Log Out
+                       </button>
+                    </div>
+                  )}
                </div>
             </>
           ) : (
